@@ -6,3 +6,6 @@ soundfile
 imageio-ffmpeg
 qrcode
 pycryptodome
+fastapi
+uvicorn
+python-multipart

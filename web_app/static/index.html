@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>鸭鸭图本地加密解密工具</title>
+    <link rel="stylesheet" href="/styles.css?v=2" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>鸭鸭图本地加密解密工具</h1>
+          <p>本地处理，输出到指定文件夹，不展示预览。</p>
+        </div>
+        <div class="status" id="serverStatus">本地服务</div>
+      </header>
+
+      <section class="notice">
+        软件为开源软件，用户使用需要遵守当地的法律法规，软件仅用于保护隐私的加密解密功能，所有代码开源，禁止商用使用，禁止违规使用。
+      </section>
+
+      <section class="panel">
+        <div class="tabs" role="tablist" aria-label="模式">
+          <button class="tab is-active" id="encodeTab" type="button" role="tab" aria-selected="true">加密</button>
+          <button class="tab" id="decodeTab" type="button" role="tab" aria-selected="false">解密</button>
+        </div>
+
+        <form class="form" id="encodeForm">
+          <label class="field">
+            <span>选择要加密的文件</span>
+            <input name="file" type="file" required />
+          </label>
+          <div class="grid">
+            <label class="field">
+              <span>密码</span>
+              <input name="password" type="password" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>鸭鸭图标题</span>
+              <input name="title" type="text" maxlength="30" />
+            </label>
+          </div>
+          <div class="grid">
+            <label class="field">
+              <span>压缩档</span>
+              <select name="compress">
+                <option value="2">2 - 更稳</option>
+                <option value="6">6 - 平衡</option>
+                <option value="8">8 - 容量高</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>输出路径</span>
+              <input name="output_dir" type="text" data-output-dir />
+            </label>
+          </div>
+          <button class="primary" type="submit">生成鸭鸭图</button>
+        </form>
+
+        <form class="form is-hidden" id="decodeForm">
+          <label class="field">
+            <span>选择鸭鸭图</span>
+            <input name="file" type="file" accept=".png,image/png" required />
+          </label>
+          <div class="grid">
+            <label class="field">
+              <span>密码</span>
+              <input name="password" type="password" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>输出路径</span>
+              <input name="output_dir" type="text" data-output-dir />
+            </label>
+          </div>
+          <button class="primary" type="submit">解密文件</button>
+        </form>
+
+        <div class="result" id="result" aria-live="polite">
+          <span>等待操作</span>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js?v=2"></script>
+  </body>
+</html>

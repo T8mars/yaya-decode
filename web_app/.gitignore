@@ -1,0 +1,11 @@
+.tmp/
+.pytest_cache/
+__pycache__/
+*/__pycache__/
+_server_*.log
+build_backend/
+dist_backend/
+dist_electron/
+node_modules/
+npm-debug.log*
+duck-backend.spec

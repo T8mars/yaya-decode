@@ -1,0 +1,42 @@
+{
+  "name": "duck-privacy-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local duck image encryption and decryption tool",
+  "main": "electron/main.js",
+  "scripts": {
+    "build:backend": "powershell -ExecutionPolicy Bypass -File ./build_backend.ps1",
+    "dist": "electron-builder --win --x64",
+    "pack": "electron-builder --win --x64 --dir"
+  },
+  "devDependencies": {
+    "electron": "^32.3.3",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.duckprivacy.tool",
+    "productName": "DuckPrivacyTool",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "files": [
+      "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "dist_backend/duck-backend",
+        "to": "backend"
+      }
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
