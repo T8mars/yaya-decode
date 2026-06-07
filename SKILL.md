@@ -1,6 +1,6 @@
 ---
 name: yaya-decode-maintenance
-description: Maintain, debug, package, verify, and publish this DuckPrivacyTool/yaya-decode project. Use when working on the local duck image encryption/decryption Web app, FastAPI backend, Electron packaging, PyInstaller backend bundle, GitHub release/push flow, project README, API routes, file routing, or repeatable checks for this repository.
+description: Maintain, debug, package, verify, publish, and coordinate multi-agent handoffs for this DuckPrivacyTool/yaya-decode project. Use when working on the local duck image encryption/decryption Web app, FastAPI backend, Electron packaging, PyInstaller backend bundle, GitHub release/push flow, project README, API routes, file routing, known pitfalls, collaboration notes, or repeatable checks for this repository.
 ---
 
 # Yaya Decode Maintenance
@@ -11,6 +11,7 @@ Before code, packaging, README, API, UI, GitHub, or release work, read the curre
 
 - `README.md`
 - `requirements.txt`
+- `web_app/config.json`
 - `duck_payload_exporter.py`
 - `duck_encode_node.py`
 - `duck_decode_node.py`
@@ -23,6 +24,8 @@ Before code, packaging, README, API, UI, GitHub, or release work, read the curre
 - `web_app/package.json`
 - `web_app/tests/test_duck_core.py`
 
+Also read `meta.json`, `features.json`, `AGENTS.md`, `.agents/`, or `.codex/` files if they exist. If the conversation has been compacted or another agent has worked since the last turn, rerun this context pass before making changes.
+
 Also check:
 
 ```powershell
@@ -31,6 +34,68 @@ git -c safe.directory=F:/AI-T8-video-onekey/ComfyUI/custom_nodes/SS_tools remote
 ```
 
 Do not commit generated folders or dependency folders.
+
+## Multi-Agent Coordination
+
+Treat `SKILL.md` as the shared operating manual and handoff log for future agents. Keep it current when a task discovers a fragile command, a regression, a packaging caveat, an API change, or a workflow rule that another agent should not have to rediscover.
+
+Use one coordinator agent for Git, release, and final merge decisions. Other agents can work in lanes, but they must report touched files, verification results, and unresolved risks before the coordinator stages or pushes anything.
+
+Do not run these concurrently across agents:
+
+- `git add`, `git commit`, `git push`, branch changes, merges, or rebases.
+- `npm install`, `npm run dist`, Electron packaging, PyInstaller builds, or cleanup of generated folders.
+- Long-running backend/Electron smoke tests that may bind ports or start `duck-backend.exe`.
+
+Before editing, each agent must state its lane and inspect `git status -sb`. Before finishing, each agent must provide a handoff note with files changed, tests run, tests skipped, and any process still running. Stop background processes started during the task unless the user explicitly wants them left open.
+
+## Collaboration Lanes
+
+Use these lanes to avoid file collisions:
+
+| Lane | Primary files | Required checks |
+| --- | --- | --- |
+| Core protocol | `duck_payload_exporter.py`, `web_app/duck_core.py`, `duck_encode_node.py`, `duck_decode_node.py` | `compileall`, `pytest web_app\tests`, roundtrip encode/decode |
+| Backend/API | `web_app/app.py`, `web_app/backend_entry.py`, `web_app/config.json`, tests | `pytest web_app\tests`, `/api/health`, encode/decode API roundtrip |
+| Frontend/UI | `web_app/static/index.html`, `web_app/static/app.js`, `web_app/static/styles.css` | `node --check web_app\static\app.js`, browser smoke test, no preview tags |
+| Packaging | `web_app/package.json`, `web_app/electron/main.js`, `web_app/build_backend.*`, package config | backend exe smoke test, `npm run dist`, packaged app launch check |
+| Docs/GitHub | `README.md`, `SKILL.md`, `.gitignore`, release notes | `git diff --check`, remote target verification |
+
+If two lanes need the same file, pause and coordinate before editing. Prefer small, explicit patches over broad rewrites.
+
+## Current State Snapshot
+
+Verify this snapshot before relying on it, because local builds and remote refs can drift:
+
+- Workspace: `F:\AI-T8-video-onekey\ComfyUI\custom_nodes\SS_tools`.
+- Preferred Python: `C:\ProgramData\anaconda3\python.exe`.
+- Default output directory: `D:\safe`.
+- Public target repository: `https://github.com/T8mars/yaya-decode.git`.
+- `origin` points to upstream `https://github.com/copyangle/SS_tools`; do not treat `origin` as the release target unless the user explicitly asks.
+- `yaya` is the intended push remote for this derived project.
+- Recent project commits include `eea3325 Add local duck privacy web app`, `9c8956f Add maintenance skill guide`, and `cb113f7 Add upstream attribution to README`.
+- Local generated release artifacts may exist under `web_app/dist_backend/` and `web_app/dist_electron/`; do not assume they are fresh without rebuilding or smoke testing.
+- Electron installer/portable outputs are large and should be distributed through GitHub Releases, not committed.
+
+## Agent Handoff Template
+
+Use this format when handing work to another agent or ending a partial task:
+
+```text
+Lane:
+Goal:
+Files read:
+Files changed:
+Commands run:
+Validation passed:
+Validation skipped and why:
+Open risks or TODO:
+Background processes left running:
+Git state:
+Next recommended step:
+```
+
+Keep handoffs factual. Include exact error text when reporting failures, especially packaging, dependency, and API errors.
 
 ## Purpose And Policy
 
@@ -318,58 +383,44 @@ For UI changes, also check:
 - Error messages do not show `[object Object]`.
 - Browser cache busting is updated when JS/CSS changes, for example `app.js?v=...`.
 
+## Fixed Issues And Regression Guards
+
+Preserve these fixes when changing nearby code:
+
+- Double-click startup originally closed too quickly when Python was not found. Keep `run_web.bat`/`run_web.ps1` checking for `C:\ProgramData\anaconda3\python.exe`, falling back to known one-key Python paths, showing the error, and pausing on failure.
+- Source startup should automatically open `http://127.0.0.1:7860` after the backend is launched.
+- Frontend once displayed `[object Object]` for FastAPI validation errors. Keep `normalizeErrorMessage()` and convert validation lists into readable strings.
+- Creating `FormData` after disabling inputs dropped uploaded files. Keep `const formData = new FormData(form)` before `setBusy(form, true)`.
+- Deleting `web_app/.tmp` while the backend is running once caused upload failures. Keep `TEMP_DIR.mkdir(parents=True, exist_ok=True)` inside `save_upload()`.
+- Frozen PyInstaller backend once failed with `Could not import module "app"`. Keep `web_app/backend_entry.py` importing `from app import app as fastapi_app` and passing the object to `uvicorn.run()`.
+- Packaged Electron must start the bundled backend automatically, wait for `/api/health`, load the local URL, and stop `duck-backend.exe` on quit.
+- README must continue to credit `copyangle/SS_tools` as the upstream source and state that this project is built on that work.
+
+## Open Improvements And Risks
+
+Track these as follow-up work unless the user asks to solve them now:
+
+- Package size is large when PyInstaller uses Anaconda. A clean dedicated venv may reduce size, but the full backend and packaged app smoke tests must be rerun.
+- GitHub Release assets are not committed by design. Before publishing binaries, rebuild or smoke-test the existing `dist_electron` outputs and record file names, sizes, and checksums.
+- `gh` may be missing on this machine. Use the GitHub connector for repository inspection when available and ordinary `git` for authenticated pushes.
+- Download IDs are in-memory only. Generated output files remain on disk, but old `/api/download/{id}` links stop working after backend restart.
+- Password protection is intended for privacy protection within this project. Do not market it as audited cryptography or enterprise-grade security without a real security review.
+- Very large files can exceed duck image capacity or create very large PNGs. Keep user-facing errors readable and test large-file behavior before changing capacity logic.
+- If adding or changing a license file, reconcile the original upstream project terms with this project user's required notices, including non-commercial and no-illegal-use language.
+- If UI changes touch `index.html` script or stylesheet links, bump cache-busting query values so packaged/static browsers do not reuse stale assets.
+- If ports, host binding, or Electron loading behavior changes, keep the service bound to `127.0.0.1` unless the user explicitly asks for LAN access.
+
 ## Known Pitfalls
 
-Disabled form controls:
-
-- Creating `FormData` after disabling inputs drops file and field values.
-- Always call `const formData = new FormData(form)` before `setBusy(form, true)`.
-- Otherwise FastAPI returns validation objects and the UI may show `[object Object]`.
-
-Temp upload directory:
-
-- `web_app/.tmp` may be deleted while the server is still running.
-- `save_upload()` must call `TEMP_DIR.mkdir(parents=True, exist_ok=True)` before `mkstemp`.
-
-PyInstaller imports:
-
-- `uvicorn.run("app:app")` can fail in frozen backend with `Could not import module "app"`.
-- Import `from app import app as fastapi_app` and call `uvicorn.run(fastapi_app, ...)`.
-
-Frozen resource path:
-
-- In packaged backend, static/config files are under `sys._MEIPASS`.
-- Keep `APP_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))`.
-
-Electron backend path:
-
-- Packaged backend lives at `process.resourcesPath/backend/duck-backend.exe`.
-- Dev packaged backend lives at `web_app/dist_backend/duck-backend/duck-backend.exe`.
-
-Large bundles:
-
-- Building with Anaconda can pull extra libraries and produce a ~259 MB Electron installer.
-- A clean venv can reduce size, but must be tested again.
-
-GitHub:
-
-- `gh` may not be installed in this environment.
-- The GitHub app connector can inspect repos.
-- Use ordinary `git` to push when authenticated.
-- Target repo used before: `https://github.com/T8mars/yaya-decode.git`.
-- Add remote `yaya` if needed.
-- If target repo has an initial commit, fetch and merge with `--allow-unrelated-histories` rather than force-pushing.
-
-Large files:
-
-- Existing original repo history includes large RAR warnings around 50 MB.
-- Do not add Electron installers or `node_modules` to git.
-- Use Releases for installer binaries.
-
-Permissions:
-
-- This workspace often requires `git -c safe.directory=F:/AI-T8-video-onekey/ComfyUI/custom_nodes/SS_tools ...`.
-- Git writes may require elevated execution because `.git` can be permission-restricted.
+- Frontend: create `FormData` before disabling controls; otherwise file fields vanish and FastAPI validation can surface as `[object Object]`.
+- Temp uploads: recreate `TEMP_DIR` inside `save_upload()` before `mkstemp`, because `.tmp` may be deleted during a live server run.
+- PyInstaller: pass the imported FastAPI object to `uvicorn.run()`, not `"app:app"`, to avoid frozen import failures.
+- Frozen paths: static/config files live under `sys._MEIPASS`; keep `APP_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))`.
+- Electron paths: packaged backend lives at `process.resourcesPath/backend/duck-backend.exe`; dev package mode uses `web_app/dist_backend/duck-backend/duck-backend.exe`.
+- Bundle size: Anaconda builds can produce ~259 MB installers; use a clean venv only after rerunning all smoke tests.
+- GitHub: `origin` is upstream `copyangle/SS_tools`; use `yaya` for `T8mars/yaya-decode`, verify with `git ls-remote yaya refs/heads/main` or the GitHub connector, and merge remote initial commits with `--allow-unrelated-histories` instead of force-pushing.
+- Large files: original history has RAR warnings near 50 MB; never commit Electron installers, `node_modules`, or generated bundles.
+- Permissions: use `git -c safe.directory=F:/AI-T8-video-onekey/ComfyUI/custom_nodes/SS_tools ...`; git writes may need elevated execution because `.git` can be permission-restricted.
 
 ## Git Publish Flow
 
